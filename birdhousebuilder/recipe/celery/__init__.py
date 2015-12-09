@@ -13,6 +13,8 @@ import zc.buildout
 from birdhousebuilder.recipe import conda, supervisor
 
 config = Template(filename=os.path.join(os.path.dirname(__file__), "celery.ini"))
+templ_cmd = Template(
+     "${prefix}/bin/celery worker -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
 
 class Recipe(object):
     """This recipe is used by zc.buildout.
@@ -23,11 +25,15 @@ class Recipe(object):
         b_options = buildout['buildout']
         self.prefix = self.options.get('prefix', conda.prefix())
         self.options['prefix'] = self.prefix
+        self.options['user'] = options.get('user', '')
+
+        self.bin_dir = b_options.get('bin-directory')
 
     def install(self, update=False):
         installed = []
         installed += list(self.install_conda(update))
         installed += list(self.install_config())
+        installed += list(self.install_supervisor(update))
         return installed
 
     def install_conda(self, update=False):
@@ -55,6 +61,21 @@ class Recipe(object):
             fp.write(result)
         return [output]
 
+    def install_supervisor(self, update=False):
+        """
+        install supervisor config for celery
+        """
+        script = supervisor.Recipe(
+            self.buildout,
+            self.name,
+            {'user': self.options.get('user'),
+             'program': self.name,
+             'command': templ_cmd.render(prefix=self.prefix, bin_dir=self.bin_dir),
+             'stopwaitsecs': '30',
+             'killasgroup': 'true',
+             })
+        return script.install(update)
+    
     def update(self):
        return self.install(update=True)
 
