@@ -12,9 +12,11 @@ from mako.template import Template
 import zc.buildout
 from birdhousebuilder.recipe import conda, supervisor
 
-config = Template(filename=os.path.join(os.path.dirname(__file__), "celery.ini"))
-templ_cmd = Template(
+templ_config = Template(filename=os.path.join(os.path.dirname(__file__), "celery.ini"))
+templ_celery_cmd = Template(
      "${prefix}/bin/celery worker -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
+templ_flower_cmd = Template(
+     "${prefix}/bin/celery flower -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
 
 class Recipe(object):
     """This recipe is used by zc.buildout.
@@ -34,21 +36,22 @@ class Recipe(object):
         installed = []
         installed += list(self.install_conda(update))
         installed += list(self.install_config())
-        installed += list(self.install_supervisor(update))
+        installed += list(self.install_celery_supervisor(update))
+        installed += list(self.install_flower_supervisor(update))
         return installed
 
     def install_conda(self, update=False):
         script = conda.Recipe(
             self.buildout,
             self.name,
-            {'pkgs': 'celery pyramid_celery'})
+            {'pkgs': 'celery pyramid_celery flower'})
         if update == True:
             return script.update()
         else:
             return script.install()
 
     def install_config(self):
-        result = config.render(**self.options)
+        result = templ_config.render(**self.options)
 
         output = os.path.join(self.prefix, 'etc', 'celery.ini')
         conda.makedirs(os.path.dirname(output))
@@ -62,7 +65,7 @@ class Recipe(object):
             fp.write(result)
         return [output]
 
-    def install_supervisor(self, update=False):
+    def install_celery_supervisor(self, update=False):
         """
         install supervisor config for celery
         """
@@ -71,7 +74,22 @@ class Recipe(object):
             self.name,
             {'user': self.options.get('user'),
              'program': self.options.get('program'),
-             'command': templ_cmd.render(prefix=self.prefix, bin_dir=self.bin_dir),
+             'command': templ_celery_cmd.render(prefix=self.prefix, bin_dir=self.bin_dir),
+             'stopwaitsecs': '30',
+             'killasgroup': 'true',
+             })
+        return script.install(update)
+
+    def install_flower_supervisor(self, update=False):
+        """
+        install supervisor config for flower
+        """
+        script = supervisor.Recipe(
+            self.buildout,
+            self.name,
+            {'user': self.options['user'],
+             'program': self.options['program'] + '_monitor',
+             'command': templ_flower_cmd.render(prefix=self.prefix, bin_dir=self.bin_dir),
              'stopwaitsecs': '30',
              'killasgroup': 'true',
              })
