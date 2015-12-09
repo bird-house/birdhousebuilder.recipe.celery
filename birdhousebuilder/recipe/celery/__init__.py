@@ -16,9 +16,9 @@ from birdhousebuilder.recipe import conda, supervisor
 
 templ_config_py = Template(filename=os.path.join(os.path.dirname(__file__), "celeryconfig.py"))
 templ_celery_cmd = Template(
-     "${bin_dir}/celery worker -A ${app} --ini ${prefix}/etc/phoenix.ini")
+     "${bin_dir}/celery worker -A ${app}")
 templ_flower_cmd = Template(
-     "${bin_dir}/celery flower -A ${app} --ini ${prefix}/etc/phoenix.ini")
+     "${bin_dir}/celery flower -A ${app}")
 
 class Recipe(object):
     """This recipe is used by zc.buildout.
@@ -31,7 +31,7 @@ class Recipe(object):
         self.options['prefix'] = self.prefix
         self.options['program'] = self.options.get('program', self.name)
         self.options['user'] = options.get('user', '')
-        self.options['app'] = options.get('app', 'pyramid_celery.celery_app')
+        self.options['app'] = options.get('app', 'myapp')
         self.conf_filename = os.path.join(self.prefix, 'etc', 'celery', 'celeryconfig.py')
 
         self.bin_dir = b_options.get('bin-directory')
@@ -49,14 +49,14 @@ class Recipe(object):
         script = conda.Recipe(
             self.buildout,
             self.name,
-            {'pkgs': 'celery pyramid_celery flower'})
+            {'pkgs': 'celery flower redis-py'})
         if update == True:
             return script.update()
         else:
             return script.install()
 
     def install_script(self):
-        eggs = ['pyramid_celery', 'celery', 'flower']
+        eggs = ['celery', 'flower', 'redis']
         if 'eggs' in self.options:
             eggs = eggs + self.options['eggs'].split()
         celery_egg_options = {
