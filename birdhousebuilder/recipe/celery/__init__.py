@@ -25,6 +25,7 @@ class Recipe(object):
         b_options = buildout['buildout']
         self.prefix = self.options.get('prefix', conda.prefix())
         self.options['prefix'] = self.prefix
+        self.options['program'] = self.options.get('program', self.name)
         self.options['user'] = options.get('user', '')
 
         self.bin_dir = b_options.get('bin-directory')
@@ -40,7 +41,7 @@ class Recipe(object):
         script = conda.Recipe(
             self.buildout,
             self.name,
-            {'pkgs': 'celery'})
+            {'pkgs': 'celery pyramid_celery'})
         if update == True:
             return script.update()
         else:
@@ -69,7 +70,7 @@ class Recipe(object):
             self.buildout,
             self.name,
             {'user': self.options.get('user'),
-             'program': self.name,
+             'program': self.options.get('program'),
              'command': templ_cmd.render(prefix=self.prefix, bin_dir=self.bin_dir),
              'stopwaitsecs': '30',
              'killasgroup': 'true',
