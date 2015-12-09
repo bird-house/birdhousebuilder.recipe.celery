@@ -14,11 +14,11 @@ import zc.buildout
 import zc.recipe.egg
 from birdhousebuilder.recipe import conda, supervisor
 
-templ_config = Template(filename=os.path.join(os.path.dirname(__file__), "celery.ini"))
+templ_config_py = Template(filename=os.path.join(os.path.dirname(__file__), "celeryconfig.py"))
 templ_celery_cmd = Template(
-     "${bin_dir}/celery worker -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
+     "${bin_dir}/celery worker -A ${app} --ini ${prefix}/etc/phoenix.ini")
 templ_flower_cmd = Template(
-     "${bin_dir}/celery flower -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
+     "${bin_dir}/celery flower -A ${app} --ini ${prefix}/etc/phoenix.ini")
 
 class Recipe(object):
     """This recipe is used by zc.buildout.
@@ -31,6 +31,8 @@ class Recipe(object):
         self.options['prefix'] = self.prefix
         self.options['program'] = self.options.get('program', self.name)
         self.options['user'] = options.get('user', '')
+        self.options['app'] = options.get('app', 'pyramid_celery.celery_app')
+        self.conf_filename = os.path.join(self.prefix, 'etc', 'celery', 'celeryconfig.py')
 
         self.bin_dir = b_options.get('bin-directory')
 
@@ -38,7 +40,7 @@ class Recipe(object):
         installed = []
         installed += list(self.install_conda(update))
         installed += list(self.install_script())
-        installed += list(self.install_config())
+        installed += list(self.install_config_py())
         installed += list(self.install_celery_supervisor(update))
         installed += list(self.install_flower_supervisor(update))
         return installed
@@ -59,6 +61,7 @@ class Recipe(object):
             eggs = eggs + self.options['eggs'].split()
         celery_egg_options = {
             'eggs': '\n'.join(eggs),
+            'extra-paths': os.path.dirname(self.conf_filename),
             'entry-points': 'celery=celery.__main__:main',
             'scripts': 'celery=celery'}
        
@@ -69,10 +72,9 @@ class Recipe(object):
         )
         return list(celery_egg.install())
         
-    def install_config(self):
-        result = templ_config.render(**self.options)
-
-        output = os.path.join(self.prefix, 'etc', 'celery.ini')
+    def install_config_py(self):
+        result = templ_config_py.render(**self.options)
+        output = self.conf_filename
         conda.makedirs(os.path.dirname(output))
 
         try:
@@ -93,7 +95,7 @@ class Recipe(object):
             self.name,
             {'user': self.options.get('user'),
              'program': self.options.get('program'),
-             'command': templ_celery_cmd.render(prefix=self.prefix, bin_dir=self.bin_dir),
+             'command': templ_celery_cmd.render(prefix=self.prefix, app=self.options['app'], bin_dir=self.bin_dir),
              'stopwaitsecs': '30',
              'killasgroup': 'true',
              })
@@ -108,7 +110,7 @@ class Recipe(object):
             self.name,
             {'user': self.options['user'],
              'program': self.options['program'] + '_monitor',
-             'command': templ_flower_cmd.render(prefix=self.prefix, bin_dir=self.bin_dir),
+             'command': templ_flower_cmd.render(prefix=self.prefix, app=self.options['app'], bin_dir=self.bin_dir),
              'stopwaitsecs': '30',
              'killasgroup': 'true',
              })
