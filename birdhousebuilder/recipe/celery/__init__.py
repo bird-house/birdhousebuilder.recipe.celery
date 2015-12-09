@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 
 """
-Recipe celery
+Recipe celery:
 
-http://docs.celeryproject.org/en/latest/
+* http://docs.celeryproject.org/en/latest/
+* https://github.com/collective/collective.recipe.celery
 """
 
 import os
 from mako.template import Template
 
 import zc.buildout
+import zc.recipe.egg
 from birdhousebuilder.recipe import conda, supervisor
 
 templ_config = Template(filename=os.path.join(os.path.dirname(__file__), "celery.ini"))
 templ_celery_cmd = Template(
-     "${prefix}/bin/celery worker -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
+     "${bin_dir}/celery worker -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
 templ_flower_cmd = Template(
-     "${prefix}/bin/celery flower -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
+     "${bin_dir}/celery flower -A pyramid_celery.celery_app --ini ${prefix}/etc/phoenix.ini")
 
 class Recipe(object):
     """This recipe is used by zc.buildout.
@@ -35,6 +37,7 @@ class Recipe(object):
     def install(self, update=False):
         installed = []
         installed += list(self.install_conda(update))
+        installed += list(self.install_script())
         installed += list(self.install_config())
         installed += list(self.install_celery_supervisor(update))
         installed += list(self.install_flower_supervisor(update))
@@ -50,6 +53,22 @@ class Recipe(object):
         else:
             return script.install()
 
+    def install_script(self):
+        eggs = ['pyramid_celery', 'celery', 'flower']
+        if 'eggs' in self.options:
+            eggs = eggs + self.options['eggs'].split()
+        celery_egg_options = {
+            'eggs': '\n'.join(eggs),
+            'entry-points': 'celery=celery.__main__:main',
+            'scripts': 'celery=celery'}
+       
+        celery_egg = zc.recipe.egg.Egg(
+            self.buildout,
+            self.name,
+            celery_egg_options,
+        )
+        return list(celery_egg.install())
+        
     def install_config(self):
         result = templ_config.render(**self.options)
 

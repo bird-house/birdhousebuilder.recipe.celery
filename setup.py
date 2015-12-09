@@ -25,6 +25,7 @@ entry_points = {"zc.buildout": [
 require = ['setuptools',
            'zc.buildout',
            # -*- Extra requirements: -*-
+           'zc.recipe.egg',
            'Mako',
            'birdhousebuilder.recipe.conda',
            'birdhousebuilder.recipe.supervisor',
