@@ -27,6 +27,7 @@ require = ['setuptools',
            # -*- Extra requirements: -*-
            'Mako',
            'birdhousebuilder.recipe.conda',
+           'birdhousebuilder.recipe.supervisor',
           ],
 
 tests_require = ['zope.testing', 'zc.buildout', 'manuel']
