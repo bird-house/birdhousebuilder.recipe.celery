@@ -91,4 +91,21 @@ The following example ``buildout.cfg`` installs Celery with Anaconda and default
 
   [celery]
   recipe = birdhousebuilder.recipe.celery
+  app = mystuff_app
+  eggs = mysuff
 
+The next example shows a configuration with ``pyramid_celery`` and enabled Flower monitoring:
+
+.. code-block:: ini 
+
+  [buildout]
+  parts = celery
+
+  anaconda-home = /home/myself/anaconda
+
+  [celery]
+  recipe = birdhousebuilder.recipe.celery
+  app = pyramid_celery.celery_app --ini default.ini
+  eggs = mysuff
+  use-celeryconfig = false
+  use-monitor = true
