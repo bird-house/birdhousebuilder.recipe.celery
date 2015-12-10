@@ -15,7 +15,7 @@ import zc.recipe.egg
 from birdhousebuilder.recipe import conda, supervisor
 from birdhousebuilder.recipe.conda import as_bool, makedirs
 
-templ_config_py = Template(filename=os.path.join(os.path.dirname(__file__), "celeryconfig.py"))
+templ_config_py = Template(filename=os.path.join(os.path.dirname(__file__), "celeryconfig_py"))
 templ_celery_cmd = Template(
      "${bin_dir}/celery worker -A ${app} --loglevel=${loglevel}")
 templ_flower_cmd = Template(
