@@ -14,6 +14,8 @@ Introduction
 ``birdhousebuilder.recipe.celery`` is a `Buildout <http://buildout.org/>`_ recipe to install and configure `Celery <http://www.celeryproject.org/>`_ Distributed Task Queue with `Anaconda <http://www.continuum.io/>`_.
 This recipe is used by the `Birdhouse <http://bird-house.github.io/>`_ project. 
 
+The recipe is based on `collective.recipe.celery <https://pypi.python.org/pypi/collective.recipe.celery>`_.
+
 
 Usage
 *****
@@ -40,6 +42,39 @@ This recipe supports the following options:
    1. ``anaconda-home`` in ``buildout.cfg``
    2. ``$ANACONDA_HOME``
    3. ``$HOME/anaconda``
+
+**app**
+   The application instance to use for the celery worker.
+
+**eggs**
+    A list of additional eggs you want to make available to Celery. Use this to
+    add additional dependencies and the module(s) containing your task definitions.
+
+**use-celeryconfig**
+   Generate and use the ``celeryconfig.py``. Set to ``false`` if Celery is configured e.a. by `pyramid_celery <https://github.com/sontek/pyramid_celery>`_. Default: ``true``.
+
+**use-monitor**
+    If ``true`` then `Flower <https://pypi.python.org/pypi/flower>`_ is started to monitor Celery. Default: ``false``. 
+
+Celery configuration options
+----------------------------
+
+The following configuration options are supported. See `Celery documentation <http://docs.celeryproject.org/en/latest/configuration.html>`_ for more details.
+
+**broker-url**
+    The url of the broker. Default: ``redis://localhost:6379/0``
+
+**celery-result-backend**
+    The url of the backend used to store task results. Default: ``redis://localhost:6379/0``
+
+**celery-imports**
+    List of modules to import when celery starts.
+
+**celeryd-concurrency**
+    The number of concurrent worker processes/threads/green threads executing tasks. Defaults to the number of available CPUs.
+
+**loglevel**
+    Logging level, choose between DEBUG, INFO, WARNING, ERROR, CRITICAL, or FATAL. Default: WARNING
 
 
 Example usage

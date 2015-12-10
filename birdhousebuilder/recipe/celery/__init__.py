@@ -13,12 +13,13 @@ from mako.template import Template
 import zc.buildout
 import zc.recipe.egg
 from birdhousebuilder.recipe import conda, supervisor
+from birdhousebuilder.recipe.conda import as_bool, makedirs
 
 templ_config_py = Template(filename=os.path.join(os.path.dirname(__file__), "celeryconfig.py"))
 templ_celery_cmd = Template(
-     "${bin_dir}/celery worker -A ${app}")
+     "${bin_dir}/celery worker -A ${app} --loglevel=${loglevel}")
 templ_flower_cmd = Template(
-     "${bin_dir}/celery flower -A ${app}")
+     "${bin_dir}/celery flower -A ${app} --loglevel=${loglevel}")
 
 class Recipe(object):
     """This recipe is used by zc.buildout.
@@ -29,20 +30,27 @@ class Recipe(object):
         b_options = buildout['buildout']
         self.prefix = self.options.get('prefix', conda.prefix())
         self.options['prefix'] = self.prefix
-        self.options['program'] = self.options.get('program', self.name)
         self.options['user'] = options.get('user', '')
         self.options['app'] = options.get('app', 'myapp')
+        self.use_monitor = as_bool(self.options.get('use-monitor', 'false'))
+        self.use_celeryconfig = as_bool(self.options.get('use-celeryconfig', 'true'))
+        self.options['broker-url'] = self.options.get('broker-url', 'redis://localhost:6379/0')
+        self.options['celery-result-backend'] = self.options.get('celery-result-backend', 'redis://localhost:6379/0')
+        self.options['loglevel'] = self.options.get('loglevel', 'WARNING')
         self.conf_filename = os.path.join(self.prefix, 'etc', 'celery', 'celeryconfig.py')
 
         self.bin_dir = b_options.get('bin-directory')
+        self.options['bin_dir'] = self.bin_dir
 
     def install(self, update=False):
         installed = []
         installed += list(self.install_conda(update))
         installed += list(self.install_script())
-        installed += list(self.install_config_py())
+        if self.use_celeryconfig:
+            installed += list(self.install_config_py())
         installed += list(self.install_celery_supervisor(update))
-        installed += list(self.install_flower_supervisor(update))
+        if self.use_monitor:
+            installed += list(self.install_flower_supervisor(update))
         return installed
 
     def install_conda(self, update=False):
@@ -62,7 +70,7 @@ class Recipe(object):
         celery_egg_options = {
             'eggs': '\n'.join(eggs),
             'extra-paths': os.path.dirname(self.conf_filename),
-            'entry-points': 'celery=celery.__main__:main',
+            #'entry-points': 'celery=celery.__main__:main',
             'scripts': 'celery=celery'}
        
         celery_egg = zc.recipe.egg.Egg(
@@ -73,9 +81,9 @@ class Recipe(object):
         return list(celery_egg.install())
         
     def install_config_py(self):
-        result = templ_config_py.render(**self.options)
+        result = templ_config_py.render(options=self.options)
         output = self.conf_filename
-        conda.makedirs(os.path.dirname(output))
+        makedirs(os.path.dirname(output))
 
         try:
             os.remove(output)
@@ -94,8 +102,8 @@ class Recipe(object):
             self.buildout,
             self.name,
             {'user': self.options.get('user'),
-             'program': self.options.get('program'),
-             'command': templ_celery_cmd.render(prefix=self.prefix, app=self.options['app'], bin_dir=self.bin_dir),
+             'program': self.name,
+             'command': templ_celery_cmd.render(**self.options),
              'stopwaitsecs': '30',
              'killasgroup': 'true',
              })
@@ -109,8 +117,8 @@ class Recipe(object):
             self.buildout,
             self.name,
             {'user': self.options['user'],
-             'program': self.options['program'] + '_monitor',
-             'command': templ_flower_cmd.render(prefix=self.prefix, app=self.options['app'], bin_dir=self.bin_dir),
+             'program': self.name + '_monitor',
+             'command': templ_flower_cmd.render(**self.options),
              'stopwaitsecs': '30',
              'killasgroup': 'true',
              })
