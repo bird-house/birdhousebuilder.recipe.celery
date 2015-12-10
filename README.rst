@@ -37,11 +37,11 @@ This recipe supports the following options:
 
      export ANACONDA_HOME=/opt/anaconda
 
-   Search priority is:
+Search priority is:
 
-   1. ``anaconda-home`` in ``buildout.cfg``
-   2. ``$ANACONDA_HOME``
-   3. ``$HOME/anaconda``
+1. ``anaconda-home`` in ``buildout.cfg``
+2. ``$ANACONDA_HOME``
+3. ``$HOME/anaconda``
 
 **app**
    The application instance to use for the celery worker.
