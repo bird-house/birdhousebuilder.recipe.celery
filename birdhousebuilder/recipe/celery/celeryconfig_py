@@ -11,6 +11,11 @@ BROKER_URL = '${options["broker-url"]}'
 CELERY_RESULT_BACKEND = '${options["celery-result-backend"]}'
 % endif
 
+% if 'celery-mongodb-backend-settings' in options:
+# Backend to store task state and results.
+CELERY_MONGODB_BACKEND_SETTINGS = ${options["celery-mongodb-backend-settings"]}
+% endif
+
 % if 'celery-imports' in options:
 # List of modules to import when celery starts.
 CELERY_IMPORTS = ${repr(tuple(options["celery-imports"].split()))}
