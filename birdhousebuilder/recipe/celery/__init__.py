@@ -32,6 +32,7 @@ class Recipe(object):
         self.options['prefix'] = self.prefix
         self.options['user'] = options.get('user', '')
         self.options['app'] = options.get('app', 'myapp')
+        self.update_conda = as_bool(self.options.get('update-conda', 'true'))
         self.use_monitor = as_bool(self.options.get('use-monitor', 'false'))
         self.use_celeryconfig = as_bool(self.options.get('use-celeryconfig', 'true'))
         self.options['broker-url'] = self.options.get('broker-url', 'redis://localhost:6379/0')
@@ -44,7 +45,8 @@ class Recipe(object):
 
     def install(self, update=False):
         installed = []
-        installed += list(self.install_conda(update))
+        if self.update_conda:
+            installed += list(self.install_conda(update))
         installed += list(self.install_script())
         if self.use_celeryconfig:
             installed += list(self.install_config_py())
@@ -54,17 +56,30 @@ class Recipe(object):
         return installed
 
     def install_conda(self, update=False):
+        pkgs = ['celery']
+        if self.use_monitor:
+            pkgs.append('flower')
+        if 'redis://' in self.options['broker-url']:
+            pkgs.append('redis-py')
+        elif 'mongodb://' in self.options['broker-url']:
+            pkgs.append('pymongo')
         script = conda.Recipe(
             self.buildout,
             self.name,
-            {'pkgs': 'celery flower redis-py'})
+            {'pkgs': ' '.join(pkgs)})
         if update == True:
             return script.update()
         else:
             return script.install()
 
     def install_script(self):
-        eggs = ['celery', 'flower', 'redis']
+        eggs = ['celery']
+        if self.use_monitor:
+            eggs.append('flower')
+        if 'redis://' in self.options['broker-url']:
+            eggs.append('redis')
+        elif 'mongodb://' in self.options['broker-url']:
+            eggs.append('pymongo')
         if 'eggs' in self.options:
             eggs = eggs + self.options['eggs'].split()
         celery_egg_options = {
