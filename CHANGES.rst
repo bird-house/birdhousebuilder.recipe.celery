@@ -1,6 +1,12 @@
 Changes
 *******
 
+0.1.3 (2016-06-13)
+==================
+
+* added update-conda option.
+* use flower, redis and pymongo only if necessary.
+
 0.1.2 (2016-06-03)
 ==================
 
