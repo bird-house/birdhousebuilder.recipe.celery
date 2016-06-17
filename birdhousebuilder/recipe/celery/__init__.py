@@ -28,8 +28,10 @@ class Recipe(object):
     def __init__(self, buildout, name, options):
         self.buildout, self.name, self.options = buildout, name, options
         b_options = buildout['buildout']
-        self.prefix = self.options.get('prefix', conda.prefix())
+
+        self.prefix = b_options.get('birdhouse-home', "/opt/birdhouse")
         self.options['prefix'] = self.prefix
+
         self.options['user'] = options.get('user', '')
         self.options['app'] = options.get('app', 'myapp')
         self.update_conda = as_bool(self.options.get('update-conda', 'true'))
