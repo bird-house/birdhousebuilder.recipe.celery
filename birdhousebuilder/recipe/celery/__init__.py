@@ -69,10 +69,7 @@ class Recipe(object):
             self.buildout,
             self.name,
             {'pkgs': ' '.join(pkgs)})
-        if update == True:
-            return script.update()
-        else:
-            return script.install()
+        return script.install(update=update)
 
     def install_script(self):
         eggs = ['celery']
