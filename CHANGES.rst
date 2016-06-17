@@ -1,6 +1,11 @@
 Changes
 *******
 
+0.2.0 (2016-06-17)
+==================
+
+* installation prefix is set by birdhouse-home buildout option.
+
 0.1.3 (2016-06-13)
 ==================
 
