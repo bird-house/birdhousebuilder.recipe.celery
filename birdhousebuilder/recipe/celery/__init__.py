@@ -29,8 +29,16 @@ class Recipe(object):
         self.buildout, self.name, self.options = buildout, name, options
         b_options = buildout['buildout']
 
-        self.prefix = b_options.get('birdhouse-home', "/opt/birdhouse")
-        self.options['prefix'] = self.prefix
+        deployment = self.deployment = options.get('deployment')
+        if deployment:
+            self.options['prefix'] = buildout[deployment].get('prefix')
+            self.options['etc-prefix'] = buildout[deployment].get('etc-prefix')
+            self.options['var-prefix'] = buildout[deployment].get('var-prefix')
+        else:
+            self.options['prefix'] = os.path.join(buildout['buildout']['parts-directory'], self.name)
+            self.options['etc-prefix'] = os.path.join(self.options['prefix'], 'etc')
+            self.options['var-prefix'] = os.path.join(self.options['prefix'], 'var')
+        self.prefix = self.options['prefix']
 
         self.options['user'] = options.get('user', '')
         self.options['app'] = options.get('app', 'myapp')
@@ -40,7 +48,7 @@ class Recipe(object):
         self.options['broker-url'] = self.options.get('broker-url', 'redis://localhost:6379/0')
         self.options['celery-result-backend'] = self.options.get('celery-result-backend', 'redis://localhost:6379/0')
         self.options['loglevel'] = self.options.get('loglevel', 'WARNING')
-        self.conf_filename = os.path.join(self.prefix, 'etc', 'celery', 'celeryconfig.py')
+        self.conf_filename = os.path.join(self.options['etc-prefix'], 'celery', 'celeryconfig.py')
 
         self.bin_dir = b_options.get('bin-directory')
         self.options['bin_dir'] = self.bin_dir
@@ -115,7 +123,8 @@ class Recipe(object):
         script = supervisor.Recipe(
             self.buildout,
             self.name,
-            {'user': self.options.get('user'),
+            {'deployment': self.deployment,
+             'user': self.options.get('user'),
              'program': self.name,
              'command': templ_celery_cmd.render(**self.options),
              'stopwaitsecs': '30',
@@ -131,6 +140,7 @@ class Recipe(object):
             self.buildout,
             self.name,
             {'user': self.options['user'],
+             'deployment': self.deployment,
              'program': self.name + '_monitor',
              'command': templ_flower_cmd.render(**self.options),
              'stopwaitsecs': '30',
