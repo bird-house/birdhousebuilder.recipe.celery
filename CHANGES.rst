@@ -1,9 +1,10 @@
 Changes
 *******
 
-0.2.0 (2016-06-19)
+0.2.0 (2016-06-20)
 ==================
 
+* using build_option from zc.buildout.
 * using zc.recipe.deployment.
 
 0.1.3 (2016-06-13)
