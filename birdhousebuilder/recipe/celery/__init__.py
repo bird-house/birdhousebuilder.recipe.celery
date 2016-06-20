@@ -10,10 +10,12 @@ Recipe celery:
 import os
 from mako.template import Template
 
+from zc.buildout.buildout import bool_option
+
 import zc.buildout
 import zc.recipe.egg
 from birdhousebuilder.recipe import conda, supervisor
-from birdhousebuilder.recipe.conda import as_bool, makedirs
+from birdhousebuilder.recipe.conda import makedirs
 
 templ_config_py = Template(filename=os.path.join(os.path.dirname(__file__), "celeryconfig_py"))
 templ_celery_cmd = Template(
@@ -42,9 +44,9 @@ class Recipe(object):
 
         self.options['user'] = options.get('user', '')
         self.options['app'] = options.get('app', 'myapp')
-        self.update_conda = as_bool(self.options.get('update-conda', 'true'))
-        self.use_monitor = as_bool(self.options.get('use-monitor', 'false'))
-        self.use_celeryconfig = as_bool(self.options.get('use-celeryconfig', 'true'))
+        self.update_conda = bool_option(self.options, 'update-conda', True)
+        self.use_monitor = bool_option(self.options, 'use-monitor', False)
+        self.use_celeryconfig = bool_option(self.options, 'use-celeryconfig', True)
         self.options['broker-url'] = self.options.get('broker-url', 'redis://localhost:6379/0')
         self.options['celery-result-backend'] = self.options.get('celery-result-backend', 'redis://localhost:6379/0')
         self.options['loglevel'] = self.options.get('loglevel', 'WARNING')
