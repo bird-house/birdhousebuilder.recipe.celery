@@ -26,6 +26,7 @@ require = ['setuptools',
            'zc.buildout',
            # -*- Extra requirements: -*-
            'zc.recipe.egg',
+           'zc.recipe.deployment',
            'Mako',
            'birdhousebuilder.recipe.conda',
            'birdhousebuilder.recipe.supervisor',

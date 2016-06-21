@@ -9,13 +9,13 @@ Recipe celery:
 
 import os
 from mako.template import Template
+import logging
 
 from zc.buildout.buildout import bool_option
-
 import zc.buildout
 import zc.recipe.egg
+import zc.recipe.deployment
 from birdhousebuilder.recipe import conda, supervisor
-from birdhousebuilder.recipe.conda import makedirs
 
 templ_config_py = Template(filename=os.path.join(os.path.dirname(__file__), "celeryconfig_py"))
 templ_celery_cmd = Template(
@@ -31,34 +31,40 @@ class Recipe(object):
         self.buildout, self.name, self.options = buildout, name, options
         b_options = buildout['buildout']
 
-        deployment = self.deployment = options.get('deployment')
-        if deployment:
-            self.options['prefix'] = buildout[deployment].get('prefix')
-            self.options['etc-prefix'] = buildout[deployment].get('etc-prefix')
-            self.options['var-prefix'] = buildout[deployment].get('var-prefix')
-        else:
-            self.options['prefix'] = os.path.join(buildout['buildout']['parts-directory'], self.name)
-            self.options['etc-prefix'] = os.path.join(self.options['prefix'], 'etc')
-            self.options['var-prefix'] = os.path.join(self.options['prefix'], 'var')
+        self.options['name'] = self.options.get('name', self.name)
+        self.name = self.options['name']
+
+        self.logger = logging.getLogger(name)
+
+        deployment = zc.recipe.deployment.Install(buildout, 'celery', {
+                                                'prefix': self.options['prefix'],
+                                                'user': self.options['user'],
+                                                'etc-user': self.options['user']})
+        deployment.install()
+        
+        self.options['etc-prefix'] = deployment.options['etc-prefix']
+        self.options['var-prefix'] = deployment.options['var-prefix']
+        self.options['etc-directory'] = deployment.options['etc-directory']
+        self.options['lib-directory'] = deployment.options['lib-directory']
+        self.options['log-directory'] = deployment.options['log-directory']
+        self.options['cache-directory'] = deployment.options['cache-directory']
         self.prefix = self.options['prefix']
 
         self.options['user'] = options.get('user', '')
         self.options['app'] = options.get('app', 'myapp')
-        self.update_conda = bool_option(self.options, 'update-conda', True)
         self.use_monitor = bool_option(self.options, 'use-monitor', False)
         self.use_celeryconfig = bool_option(self.options, 'use-celeryconfig', True)
         self.options['broker-url'] = self.options.get('broker-url', 'redis://localhost:6379/0')
         self.options['celery-result-backend'] = self.options.get('celery-result-backend', 'redis://localhost:6379/0')
         self.options['loglevel'] = self.options.get('loglevel', 'WARNING')
-        self.conf_filename = os.path.join(self.options['etc-prefix'], 'celery', 'celeryconfig.py')
+        self.conf_filename = os.path.join(self.options['etc-directory'], 'celeryconfig.py')
 
         self.bin_dir = b_options.get('bin-directory')
         self.options['bin_dir'] = self.bin_dir
 
     def install(self, update=False):
         installed = []
-        if self.update_conda:
-            installed += list(self.install_conda(update))
+        installed += list(self.install_conda(update))
         installed += list(self.install_script())
         if self.use_celeryconfig:
             installed += list(self.install_config_py())
@@ -107,7 +113,6 @@ class Recipe(object):
     def install_config_py(self):
         result = templ_config_py.render(options=self.options)
         output = self.conf_filename
-        makedirs(os.path.dirname(output))
 
         try:
             os.remove(output)
@@ -125,7 +130,7 @@ class Recipe(object):
         script = supervisor.Recipe(
             self.buildout,
             self.name,
-            {'deployment': self.deployment,
+            {'prefix': self.options['prefix'],
              'user': self.options.get('user'),
              'program': self.name,
              'command': templ_celery_cmd.render(**self.options),
@@ -141,8 +146,8 @@ class Recipe(object):
         script = supervisor.Recipe(
             self.buildout,
             self.name,
-            {'user': self.options['user'],
-             'deployment': self.deployment,
+            {'prefix': self.options['prefix'],
+             'user': self.options['user'],
              'program': self.name + '_monitor',
              'command': templ_flower_cmd.render(**self.options),
              'stopwaitsecs': '30',
