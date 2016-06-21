@@ -84,7 +84,8 @@ class Recipe(object):
         script = conda.Recipe(
             self.buildout,
             self.name,
-            {'pkgs': ' '.join(pkgs)})
+            {'channels': 'birdhouse conda-forge',
+             'pkgs': ' '.join(pkgs)})
         return script.install(update=update)
 
     def install_script(self):
