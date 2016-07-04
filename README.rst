@@ -6,42 +6,37 @@ birdhousebuilder.recipe.celery
    :target: https://travis-ci.org/bird-house/birdhousebuilder.recipe.celery
    :alt: Travis Build
 
-.. contents::
-
 Introduction
 ************
 
-``birdhousebuilder.recipe.celery`` is a `Buildout <http://buildout.org/>`_ recipe to install and configure `Celery <http://www.celeryproject.org/>`_ Distributed Task Queue with `Anaconda <http://www.continuum.io/>`_.
-This recipe is used by the `Birdhouse <http://bird-house.github.io/>`_ project. 
+``birdhousebuilder.recipe.celery`` is a `Buildout`_ recipe to install and configure `Celery`_ Distributed Task Queue with `Anaconda`_.
+This recipe is used by the `Birdhouse`_ project. 
 
 The recipe is based on `collective.recipe.celery <https://pypi.python.org/pypi/collective.recipe.celery>`_.
 
 
+.. _`Buildout`: http://buildout.org/
+.. _`Anaconda`: http://www.continuum.io/
+.. _`Birdhouse`: http://bird-house.github.io/
+.. _`Celery`: http://www.celeryproject.org/
+.. _`Supervisor`: http://supervisord.org/
+
 Usage
 *****
 
-The recipe requires that Anaconda is already installed. It assumes that the default Anaconda location is in your home directory ``~/anaconda``. Otherwise you need to set the ``ANACONDA_HOME`` environment variable or the Buildout option ``anaconda-home``.
+The recipe requires that Anaconda is already installed. You can use the buildout option ``anaconda-home`` to set the prefix for the anaconda installation. Otherwise the environment variable ``CONDA_PREFIX`` (variable is set when activating a conda environment) is used as conda prefix. 
 
-It installs the ``celery`` package from a conda channel  in a conda enviroment named ``birdhouse``. The location of the birdhouse environment is ``.conda/envs/birdhouse``. It deploys a `Supervisor <http://supervisord.org/>`_ configuration for Celery in ``~/.conda/envs/birdhouse/etc/supervisor/conf.d/celery.conf``. Supervisor can be started with ``~/.conda/envs/birdhouse/etc/init.d/supervisord start``.
+The recipe will install the ``celery`` package from a conda channel in a conda enviroment defined by ``CONDA_PREFIX``. It deploys a `Supervisor`_ configuration for Celery in ``{{prefix}}/etc/supervisor/conf.d/celery.conf``. Supervisor can be started with ``{{prefix}}/etc/init.d/supervisord start``.
 
 The recipe depends on ``birdhousebuilder.recipe.conda`` and ``birdhousebuilder.recipe.supervisor``.
 
 Supported options
 =================
 
-This recipe supports the following options:
-
 **anaconda-home**
-   Buildout option with the root folder of the Anaconda installation. Default: ``$HOME/anaconda``.
-   The default location can also be set with the environment variable ``ANACONDA_HOME``. Example::
+   Buildout option pointing to the root folder of the Anaconda installation. Default: ``$HOME/anaconda``.
 
-     export ANACONDA_HOME=/opt/anaconda
-
-Search priority is:
-
-1. ``anaconda-home`` in ``buildout.cfg``
-2. ``$ANACONDA_HOME``
-3. ``$HOME/anaconda``
+Buildout options for ``celery``:
 
 **app**
    The application instance to use for the celery worker.
@@ -52,9 +47,6 @@ Search priority is:
 
 **use-celeryconfig**
    Generate and use the ``celeryconfig.py``. Set to ``false`` if Celery is configured e.a. by `pyramid_celery <https://github.com/sontek/pyramid_celery>`_. Default: ``true``.
-
-**use-monitor**
-    If ``true`` then `Flower <https://pypi.python.org/pypi/flower>`_ is started to monitor Celery. Default: ``false``. 
 
 Celery configuration options
 ----------------------------
@@ -108,4 +100,4 @@ The next example shows a configuration with ``pyramid_celery`` and enabled Flowe
   app = pyramid_celery.celery_app --ini default.ini
   eggs = mysuff
   use-celeryconfig = false
-  use-monitor = true
+
