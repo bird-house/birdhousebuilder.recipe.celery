@@ -1,11 +1,12 @@
 Changes
 *******
 
-0.2.0 (2016-06-20)
+0.2.0 (2016-07-04)
 ==================
 
-* using build_option from zc.buildout.
+* using bool_option from zc.buildout.
 * using zc.recipe.deployment.
+* removed flower.
 
 0.1.3 (2016-06-13)
 ==================
