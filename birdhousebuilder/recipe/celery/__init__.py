@@ -21,9 +21,10 @@ import birdhousebuilder.recipe.conda
 
 templ_config_py = Template(filename=os.path.join(os.path.dirname(__file__), "celeryconfig_py"))
 templ_celery_cmd = Template(
-     "${bin_directory}/celery worker -A ${app} --loglevel=${loglevel}")
+    "${bin_directory}/celery worker -A ${app} --loglevel=${loglevel}")
 templ_flower_cmd = Template(
-     "${bin_directory}/celery flower -A ${app} --loglevel=${loglevel}")
+    "${bin_directory}/celery flower -A ${app} --loglevel=${loglevel}")
+
 
 class Recipe(object):
     """This recipe is used by zc.buildout.
@@ -35,7 +36,7 @@ class Recipe(object):
 
         self.name = options.get('name', name)
         self.options['name'] = self.name
-        
+
         self.logger = logging.getLogger(self.name)
 
         # deployment layout
@@ -43,8 +44,8 @@ class Recipe(object):
             if section_name in buildout._raw:
                 raise KeyError("already in buildout", section_name)
             buildout._raw[section_name] = options
-            buildout[section_name] # cause it to be added to the working parts
-            
+            buildout[section_name]  # cause it to be added to the working parts
+
         self.deployment_name = self.name + "-celery-deployment"
         self.deployment = zc.recipe.deployment.Install(buildout, self.deployment_name, {
             'name': "celery",
@@ -68,14 +69,14 @@ class Recipe(object):
         self.options['env'] = self.options.get('env', '')
         self.options['pkgs'] = self.options.get('pkgs', 'celery redis-py pymongo')
         self.options['channels'] = self.options.get('channels', 'defaults birdhouse')
-        
+
         self.conda = birdhousebuilder.recipe.conda.Recipe(self.buildout, self.name, {
             #'prefix': self.options.get('conda-prefix', ''),
             'env': self.options['env'],
             'pkgs': self.options['pkgs'],
             'channels': self.options['channels']})
         self.options['conda-prefix'] = self.options['conda_prefix'] = self.conda.options['prefix']
-        
+
         # celery options
         self.options['app'] = options.get('app', 'myapp')
         self.use_celeryconfig = bool_option(self.options, 'use-celeryconfig', True)
@@ -107,14 +108,14 @@ class Recipe(object):
             'extra-paths': self.options['etc-directory'],
             #'entry-points': 'celery=celery.__main__:main',
             'scripts': 'celery=celery'}
-       
+
         celery_egg = zc.recipe.egg.Egg(
             self.buildout,
             self.name,
             celery_egg_options,
         )
         return list(celery_egg.install())
-        
+
     def install_config_py(self):
         text = templ_config_py.render(options=self.options)
         config = Configuration(self.buildout, 'celeryconfig.py', {
@@ -138,10 +139,10 @@ class Recipe(object):
              'killasgroup': 'true',
              })
         return script.install(update)
-    
+
     def update(self):
-       return self.install(update=True)
+        return self.install(update=True)
+
 
 def uninstall(name, options):
     pass
-
